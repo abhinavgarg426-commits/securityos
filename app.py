@@ -15,7 +15,6 @@ from urllib.parse import urlparse
 import whois
 import ssl
 import socket
-from bs4 import BeautifulSoup
 import time
 import os
 
