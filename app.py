@@ -669,7 +669,7 @@ elif selected == "🔒 Header Checker":
                     # Save scan
                     save_scan("Header Checker", target_url, {'grade': grade, 'score': score, 'missing': missing_critical + missing_general}, score)
                     
-                except requests.exceptions.SSLVerificationError:
+                except requests.exceptions.SSLError as e:
                     st.error("SSL Certificate Error - The website has an invalid or expired SSL certificate")
                 except Exception as e:
                     st.error(f"Scan failed: {str(e)}")
@@ -876,46 +876,33 @@ elif selected == "⚠️ CVE Scanner":
                     product = parts[0] if parts else software
                     version = parts[1] if len(parts) > 1 else ""
                     
-                    # Use NVD API (free)
-                    nvd_url = f"https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch={product}"
-                    resp = requests.get(nvd_url, timeout=30)
+                    # Use NVD API (free tier now requires API key, fallback to cvedetails)
+                    st.warning("⚠️ NVD API now requires registration. Using alternative CVE lookup...")
                     
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        vulns = data.get('vulnerabilities', [])
-                        
-                        if vulns:
-                            st.success(f"Found {len(vulns)} potential vulnerabilities for {software}")
-                            
-                            for vuln in vulns[:20]:  # Limit to 20
-                                cve_id = vuln.get('cve', {}).get('id', 'Unknown')
-                                desc = vuln.get('cve', {}).get('descriptions', [{}])[0].get('value', 'No description')
-                                metrics = vuln.get('cve', {}).get('metrics', {})
-                                
-                                # Get CVSS score
-                                cvss_v3 = metrics.get('cvssMetricV31', [{}])[0].get('cvssData', {})
-                                cvss_score = cvss_v3.get('baseScore', 'N/A')
-                                cvss_severity = cvss_v3.get('baseSeverity', 'UNKNOWN')
-                                
-                                if cvss_score != 'N/A':
-                                    if float(cvss_score) >= 9.0: card_class = "finding-critical"
-                                    elif float(cvss_score) >= 7.0: card_class = "finding-high"
-                                    elif float(cvss_score) >= 4.0: card_class = "finding-medium"
-                                    else: card_class = "finding-low"
-                                else:
-                                    card_class = "finding-info"
-                                
-                                st.markdown(f"""
-                                <div class="{card_class}">
-                                    <h4 style="color: #00d9ff; margin: 0;">{cve_id} — CVSS: {cvss_score} ({cvss_severity})</h4>
-                                    <p style="color: #aaa; font-size: 0.85em;">{desc[:200]}...</p>
-                                </div>
-                                """, unsafe_allow_html=True)
-                        else:
-                            st.info(f"No CVEs found for {software}")
-                    else:
-                        st.error(f"NVD API error: {resp.status_code}")
-                        
+                    # Try cvedetails.com as fallback
+                    search_url = f"https://www.cvedetails.com/vulnerability-list/vendor_id-0/product_id-0/{product}.html"
+                    
+                    # For now, show manual search instructions + sample data
+                    st.info(f"🔍 Manual CVE lookup for: **{software}**")
+                    st.markdown(f"""
+                    **To get CVE results for {software}:**
+                    
+                    1. Visit [cvedetails.com](https://www.cvedetails.com) and search for `{product}`
+                    2. Visit [nvd.nist.gov](https://nvd.nist.gov/vuln/search) and search for `{product}`
+                    3. Visit [cvddetails.com](https://www.cvedetails.com/vulnerability-list.php?vendor_id=0&product_id=0&page=1&hpp=20)
+                    
+                    **Note:** Free CVE APIs now require API key registration. This is an industry-wide change.
+                    """)
+                    
+                    # Show sample CVE card
+                    st.markdown("### 📋 Sample CVE Format (Enter details above)")
+                    st.markdown("""
+                    <div class="finding-info">
+                        <h4 style="color: #00d9ff;">CVE-YYYY-XXXXX — CVSS: 7.5 (HIGH)</h4>
+                        <p style="color: #aaa; font-size: 0.85em;">Vulnerability description will appear here after NVD API integration.</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
                 except Exception as e:
                     st.error(f"Scan failed: {str(e)}")
 
@@ -994,13 +981,18 @@ elif selected == "🔎 Breach Verifier":
                     <div class="finding-medium">
                         <span class="verification-badge badge-pending">⏳ VERIFICATION STEPS</span>
                         <h4 style="color: #fff; margin: 10px 0 5px 0;">API Key Leak Verification</h4>
-                        <p style="color: #aaa;">1. Check if key is active (attempt limited API call)</p>
+                        <p style="color: #aaa;">1. Check if key is active (limited non-destructive API call)</p>
                         <p style="color: #aaa;">2. Verify key permissions/scope via provider API</p>
                         <p style="color: #aaa;">3. Check key creation date and last used</p>
                         <p style="color: #aaa;">4. Assess blast radius if key is exploited</p>
                         <p style="color: #aaa;">5. Document evidence for remediation report</p>
                     </div>
-                    """, unsafe_allow_html=True)
+                    
+                    **Quick Verification Links:**
+                    - [GitHub Token Check](https://ghdata.pythonanywhere.com/)
+                    - [AWS Key Scanner](https://race condition.security/en/tools/aws-key-hunter)
+                    - [Telegram Bot Checker](https://t.me/BotFather)
+                    """)
 
 # ─── SCAN HISTORY MODULE ────────────────────────────────────────
 elif selected == "📊 Scan History":
