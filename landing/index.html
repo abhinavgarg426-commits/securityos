@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecurityOS — One Dashboard. Complete Security Recon.</title>
+    <meta name="description" content="Find + VERIFY API keys, secrets, vulnerabilities. The only security scanner with a built-in verification engine that eliminates false positives.">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-card: #16213e;
+            --primary: #00d9ff;
+            --accent: #e94560;
+            --text: #ffffff;
+            --text-muted: #8892b0;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        /* Navbar */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 5%;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            border-bottom: 1px solid rgba(0, 217, 255, 0.1);
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .logo span { color: var(--accent); }
+        
+        nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-left: 30px;
+            transition: color 0.3s;
+        }
+        
+        nav a:hover { color: var(--primary); }
+        
+        .cta-btn {
+            background: linear-gradient(135deg, var(--primary) 0%, #764ba2 100%);
+            color: var(--bg-dark) !important;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        
+        .cta-btn:hover { opacity: 0.9; }
+        
+        /* Hero */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 120px 5% 80px;
+            background: radial-gradient(ellipse at top, rgba(0, 217, 255, 0.1) 0%, transparent 60%);
+        }
+        
+        .badge {
+            display: inline-block;
+            background: rgba(0, 217, 255, 0.1);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+        }
+        
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            max-width: 900px;
+        }
+        
+        .hero h1 span {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin-bottom: 40px;
+        }
+        
+        .hero-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, #764ba2 100%);
+            color: var(--bg-dark);
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-weight: 700;
+            text-decoration: none;
+            font-size: 1.1rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 40px rgba(0, 217, 255, 0.3);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid var(--text-muted);
+            color: var(--text);
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+        }
+        
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        
+        /* Dashboard Preview */
+        .dashboard-preview {
+            margin-top: 80px;
+            width: 100%;
+            max-width: 1000px;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5);
+        }
+        
+        .dashboard-preview img {
+            width: 100%;
+            display: block;
+        }
+        
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding: 80px 5%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            border: 1px solid rgba(0, 217, 255, 0.1);
+        }
+        
+        .stat-card h3 {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .stat-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+        
+        /* Features */
+        .features {
+            padding: 80px 5%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+        
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 60px;
+            font-size: 1.1rem;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+        }
+        
+        .feature-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 35px;
+            border: 1px solid rgba(0, 217, 255, 0.1);
+            transition: transform 0.3s, border-color 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        
+        .feature-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+        
+        /* Verification Engine */
+        .verification-section {
+            padding: 100px 5%;
+            background: linear-gradient(180deg, transparent 0%, rgba(233, 69, 96, 0.05) 50%, transparent 100%);
+        }
+        
+        .verification-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+        
+        .verification-visual {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .verification-step {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px 25px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            border: 1px solid rgba(0, 217, 255, 0.1);
+        }
+        
+        .step-num {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            color: var(--bg-dark);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        
+        .step-text {
+            font-weight: 600;
+            color: var(--text);
+        }
+        
+        .step-result {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        
+        .verification-text h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        
+        .verification-text p {
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            font-size: 1.05rem;
+        }
+        
+        .verification-text ul {
+            list-style: none;
+            margin-bottom: 30px;
+        }
+        
+        .verification-text li {
+            padding: 10px 0;
+            color: var(--text-muted);
+        }
+        
+        .verification-text li::before {
+            content: '✓';
+            color: var(--primary);
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        
+        /* Pricing */
+        .pricing {
+            padding: 80px 5%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 25px;
+            margin-top: 50px;
+        }
+        
+        .price-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 35px;
+            border: 1px solid rgba(0, 217, 255, 0.1);
+            text-align: center;
+        }
+        
+        .price-card.featured {
+            border-color: var(--primary);
+            transform: scale(1.05);
+            position: relative;
+        }
+        
+        .price-card.featured::before {
+            content: 'MOST POPULAR';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary);
+            color: var(--bg-dark);
+            padding: 5px 20px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        
+        .price-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--text-muted);
+        }
+        
+        .price-card .price {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+        
+        .price-card .price span {
+            font-size: 1rem;
+            color: var(--text-muted);
+        }
+        
+        .price-card ul {
+            list-style: none;
+            text-align: left;
+            margin-bottom: 25px;
+        }
+        
+        .price-card li {
+            padding: 8px 0;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        .price-card li::before {
+            content: '✓';
+            color: var(--primary);
+            margin-right: 8px;
+        }
+        
+        .price-card a {
+            display: block;
+            background: linear-gradient(135deg, var(--primary) 0%, #764ba2 100%);
+            color: var(--bg-dark);
+            text-align: center;
+            padding: 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        /* CTA */
+        .cta-section {
+            padding: 100px 5%;
+            text-align: center;
+            background: linear-gradient(180deg, transparent, rgba(0, 217, 255, 0.05));
+        }
+        
+        .cta-section h2 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+        
+        .cta-section p {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+        }
+        
+        /* Footer */
+        footer {
+            padding: 60px 5%;
+            border-top: 1px solid rgba(0, 217, 255, 0.1);
+            text-align: center;
+            color: var(--text-muted);
+        }
+        
+        footer p { margin-bottom: 15px; }
+        
+        footer a {
+            color: var(--text-muted);
+            text-decoration: none;
+            margin: 0 15px;
+        }
+        
+        footer a:hover { color: var(--primary); }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .stats { grid-template-columns: repeat(2, 1fr); }
+            .features-grid { grid-template-columns: 1fr; }
+            .verification-content { grid-template-columns: 1fr; }
+            .pricing-grid { grid-template-columns: 1fr; }
+            .price-card.featured { transform: none; }
+            
+            nav a:not(.cta-btn) { display: none; }
+        }
+        
+        /* Glowing effect */
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 217, 255, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(0, 217, 255, 0.6); }
+        }
+        
+        .glow {
+            animation: glow 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav>
+        <div class="logo">Security<span>OS</span></div>
+        <div>
+            <a href="#features">Features</a>
+            <a href="#verification">Verification</a>
+            <a href="#pricing">Pricing</a>
+            <a href="https://securityos-app.streamlit.app" target="_blank" class="cta-btn">Open Dashboard</a>
+        </div>
+    </nav>
+    
+    <!-- Hero -->
+    <section class="hero">
+        <div class="badge">🛡️ Security Recon Suite with Verification Engine</div>
+        <h1>Find + <span>VERIFY</span> Security Vulnerabilities</h1>
+        <p>The only scanner that doesn't just FIND secrets — it VERIFIES them. Eliminate false positives. Get actionable, exploitability-tested findings.</p>
+        
+        <div class="hero-buttons">
+            <a href="https://securityos-app.streamlit.app" target="_blank" class="btn-primary">🚀 Open Free Dashboard</a>
+            <a href="https://gumroad.com/securityos" target="_blank" class="btn-secondary">💰 View Pro Plans</a>
+        </div>
+        
+        <div class="dashboard-preview">
+            <img src="https://raw.githubusercontent.com/zaid-ahmed/securityos/main/preview.png" alt="SecurityOS Dashboard" onerror="this.style.display='none'">
+        </div>
+    </section>
+    
+    <!-- Stats -->
+    <section class="stats">
+        <div class="stat-card">
+            <h3>8</h3>
+            <p>Security Modules</p>
+        </div>
+        <div class="stat-card">
+            <h3>17+</h3>
+            <p>Secret Types Detected</p>
+        </div>
+        <div class="stat-card">
+            <h3>95%</h3>
+            <p>False Positive Reduction</p>
+        </div>
+        <div class="stat-card">
+            <h3>100%</h3>
+            <p>Verification Engine</p>
+        </div>
+    </section>
+    
+    <!-- Features -->
+    <section class="features" id="features">
+        <h2 class="section-title">8 Tools in 1 Dashboard</h2>
+        <p class="section-subtitle">Complete security reconnaissance suite for bug bounty hunters, pentesters, and security teams</p>
+        
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h3>Subdomain Finder</h3>
+                <p>Discover all subdomains via certificate transparency. Instant enumeration of attack surface.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔑</div>
+                <h3>Secret Scanner</h3>
+                <p>Find + VERIFY API keys, tokens, credentials. Context-aware analysis eliminates noise.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3>Header Checker</h3>
+                <p>Audit HTTP security headers with A-F grading. Get instant remediation guidance.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📜</div>
+                <h3>SSL Monitor</h3>
+                <p>Track SSL certificates and expiry dates. Never let a cert expire unexpectedly.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌑</div>
+                <h3>Dark Web Monitor</h3>
+                <p>Monitor brand/email for breach data. Real-time breach detection and alerts.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📸</div>
+                <h3>Screenshot API</h3>
+                <p>Bulk website screenshots for reports and documentation. High-res, instant capture.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚠️</div>
+                <h3>CVE Scanner</h3>
+                <p>Check known vulnerabilities for any software. NVD database powered.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔎</div>
+                <h3>Breach Verifier</h3>
+                <p>Verify if breach data is real, exploitable, and assess true impact.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Scan History</h3>
+                <p>All scans saved with full findings. Export reports anytime.</p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Verification Engine -->
+    <section class="verification-section" id="verification">
+        <div class="verification-content">
+            <div class="verification-visual">
+                <div class="verification-step">
+                    <div class="step-num">1</div>
+                    <div>
+                        <div class="step-text">DISCOVER</div>
+                        <div class="step-result">Raw secret detected in target</div>
+                    </div>
+                </div>
+                <div class="verification-step">
+                    <div class="step-num">2</div>
+                    <div>
+                        <div class="step-text">CLASSIFY</div>
+                        <div class="step-result">GitHub PAT, AWS Key, Stripe, etc.</div>
+                    </div>
+                </div>
+                <div class="verification-step">
+                    <div class="step-num">3</div>
+                    <div>
+                        <div class="step-text">CONTEXT</div>
+                        <div class="step-result">Test vs Prod, Public vs Private</div>
+                    </div>
+                </div>
+                <div class="verification-step">
+                    <div class="step-num">4</div>
+                    <div>
+                        <div class="step-text">EXPLOITABILITY</div>
+                        <div class="step-result">Non-destructive verification</div>
+                    </div>
+                </div>
+                <div class="verification-step">
+                    <div class="step-num">5</div>
+                    <div>
+                        <div class="step-text">SCORE</div>
+                        <div class="step-result">P0 Critical → P4 Info (0-100)</div>
+                    </div>
+                </div>
+                <div class="verification-step glow">
+                    <div class="step-num" style="background: var(--accent);">✓</div>
+                    <div>
+                        <div class="step-text">VERIFIED REPORT</div>
+                        <div class="step-result" style="color: var(--primary);">Actionable findings ready to submit</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="verification-text">
+                <h2>The Verification Engine</h2>
+                <p>Most scanners find 50 secrets. 45 are false positives. You waste hours verifying nothing. SecurityOS changes that.</p>
+                <p>Our verification engine tests EVERY finding before reporting it:</p>
+                <ul>
+                    <li>Classifies secret type (GitHub, AWS, Stripe, etc.)</li>
+                    <li>Checks context (test vs production, public repo vs private)</li>
+                    <li>Tests exploitability without causing damage</li>
+                    <li>Calculates true risk score (P0-P4)</li>
+                    <li>Marks false positives automatically</li>
+                    <li>Generates remediation-ready reports</li>
+                </ul>
+                <a href="https://securityos-app.streamlit.app" target="_blank" class="btn-primary">Try the Verifier →</a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Pricing -->
+    <section class="pricing" id="pricing">
+        <h2 class="section-title">Simple, Transparent Pricing</h2>
+        <p class="section-subtitle">Start free. Upgrade when you need more.</p>
+        
+        <div class="pricing-grid">
+            <div class="price-card">
+                <h3>FREE</h3>
+                <div class="price">₹0<span>/mo</span></div>
+                <ul>
+                    <li>10 scans/day</li>
+                    <li>1 domain target</li>
+                    <li>Basic reports</li>
+                    <li>Community support</li>
+                </ul>
+                <a href="https://securityos-app.streamlit.app" target="_blank">Get Started</a>
+            </div>
+            
+            <div class="price-card">
+                <h3>HOBBYIST</h3>
+                <div class="price">₹499<span>/mo</span></div>
+                <ul>
+                    <li>100 scans/day</li>
+                    <li>5 domains</li>
+                    <li>PDF reports</li>
+                    <li>Email support</li>
+                </ul>
+                <a href="https://gumroad.com/securityos" target="_blank">Buy Now</a>
+            </div>
+            
+            <div class="price-card featured">
+                <h3>PRO</h3>
+                <div class="price">₹1,999<span>/mo</span></div>
+                <ul>
+                    <li>Unlimited scans</li>
+                    <li>Unlimited domains</li>
+                    <li>API access</li>
+                    <li>Priority support</li>
+                    <li>Team features</li>
+                </ul>
+                <a href="https://gumroad.com/securityos" target="_blank">Buy Now</a>
+            </div>
+            
+            <div class="price-card">
+                <h3>AGENCY</h3>
+                <div class="price">₹4,999<span>/mo</span></div>
+                <ul>
+                    <li>Everything in Pro</li>
+                    <li>White-label reports</li>
+                    <li>Client management</li>
+                    <li>Dedicated support</li>
+                </ul>
+                <a href="https://gumroad.com/securityos" target="_blank">Contact Sales</a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- CTA -->
+    <section class="cta-section">
+        <h2>Start Finding REAL Vulnerabilities</h2>
+        <p>No more false positives. No more wasted hours. Just verified, actionable findings.</p>
+        <a href="https://securityos-app.streamlit.app" target="_blank" class="btn-primary" style="display: inline-block;">🚀 Open Dashboard Free</a>
+    </section>
+    
+    <!-- Footer -->
+    <footer>
+        <p>© 2024 SecurityOS — Built with Verification Engine</p>
+        <div>
+            <a href="#features">Features</a>
+            <a href="#pricing">Pricing</a>
+            <a href="https://securityos-app.streamlit.app" target="_blank">Dashboard</a>
+            <a href="https://twitter.com/securityos" target="_blank">Twitter</a>
+        </div>
+    </footer>
+</body>
+</html>
